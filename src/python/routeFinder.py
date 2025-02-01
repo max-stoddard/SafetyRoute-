@@ -20,6 +20,27 @@ def calculate_route():
 
     return jsonify({'message': 'GET request successful'})
 
+def find_routes():
+    pass
+
+def create_coordinate_pairs():
+    pass
+
+def create_list_of_coordinate_pairs():
+    pass
+
+def create_list_of_crimes():
+    pass
+
+def create_list_of_scores():
+    pass
+
+def create_one_score():
+    pass
+
+def find_best_route():
+    pass
+
 
 if __name__ == '__main__':
     app.run(debug=True)
