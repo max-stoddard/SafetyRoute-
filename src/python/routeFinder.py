@@ -16,17 +16,30 @@ load_dotenv()
 @app.route('/api/calculate_route', methods=['GET'])
 def calculate_route():
 
-    routes = find_routes((1, 1), (1, 1))
+    (routes, formattedRoutes) = find_routes((51.48180, -0.19098), (51.49172, -0.19391))
 
     for route in routes:
-        create_coordinate_pairs()
-        create_list_of_crimes()
-        create_list_of_scores()
-        create_one_score()
+        print(route)
 
-    find_best_route()
-
-    return jsonify({'message': 'GET request successful'})
+    # routeScores = []
+    #
+    # for route in formattedRoutes:
+    #     crimes = create_list_of_crimes(route)
+    #     scores = create_list_of_scores(crimes)
+    #     score = create_one_score(scores)
+    #     routeScores.append(score)
+    #
+    #
+    # minVal = 9999999999
+    # minIndex = 0
+    # for i in range(0, len(routeScores)):
+    #     if (routeScores[i] < minVal):
+    #         minVal = routeScores[i]
+    #         minIndex = i
+    #
+    # best = routes[minIndex]
+    #
+    # return jsonify({'message': 'GET request successful'})
 
 def find_routes(origin, destination):
     api_key = os.environ.get('API_KEY')
@@ -53,6 +66,7 @@ def find_routes(origin, destination):
         raise Exception(f"API error: {data.get('status')}, {data.get('error_message')}")
 
     routes_as_coordinates = []
+    routes_as_coordinates_notformatted = []
 
     for route in data.get("routes", []):
         encoded_polyline = route["overview_polyline"]["points"]
@@ -61,8 +75,9 @@ def find_routes(origin, destination):
         for i in range(1, len(route_coordinates)):
             route_coordinates_pairs.append((route_coordinates[i-1], route_coordinates[i]))
         routes_as_coordinates.append(route_coordinates_pairs)
+        routes_as_coordinates_notformatted.append(route_coordinates)
 
-    return list(map(lambda lis: list(map(lambda pair: ((pair[0], pair[1]), math.sqrt(pow(pair[0][0]-pair[1][0], 2) + pow(pair[0][1]-pair[1][1], 2))), lis)), routes_as_coordinates))
+    return routes_as_coordinates_notformatted, list(map(lambda lis: list(map(lambda pair: ((pair[0], pair[1]), math.sqrt(pow(pair[0][0] - pair[1][0], 2) + pow(pair[0][1] - pair[1][1], 2))), lis)), routes_as_coordinates))
 
 def create_coordinate_pairs():
     pass
@@ -78,7 +93,7 @@ def create_list_of_scores():
 
 # scores = [pair(float[], float)]
 def create_one_score(scores):
-    mapped = list(map(lambda x: sum(x[0])/x[1], scores))
+    mapped = list(map(lambda x: sum(x[0])/(x[1] * 1000), scores))
     return max(mapped)
 
 def find_best_route():
@@ -86,7 +101,5 @@ def find_best_route():
 
 
 if __name__ == '__main__':
-    routes = find_routes((51.48180, -0.19098), (51.49172, -0.19391))
-    for route in routes:
-        print(route)
+    calculate_route()
     # app.run(debug=True)
