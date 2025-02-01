@@ -1,3 +1,5 @@
+import math
+
 from flask import Flask, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -60,7 +62,7 @@ def find_routes(origin, destination):
             route_coordinates_pairs.append((route_coordinates[i-1], route_coordinates[i]))
         routes_as_coordinates.append(route_coordinates_pairs)
 
-    return routes_as_coordinates
+    return list(map(lambda lis: list(map(lambda pair: ((pair[0], pair[1]), math.sqrt(pow(pair[0][0]-pair[0][1], 2) + pow(pair[1][0]-pair[1][1], 2))), lis)), routes_as_coordinates))
 
 def create_coordinate_pairs():
     pass
@@ -74,8 +76,10 @@ def create_list_of_crimes():
 def create_list_of_scores():
     pass
 
-def create_one_score():
-    pass
+# scores = [pair(float[], float)]
+def create_one_score(scores):
+    mapped = list(map(lambda x: sum(x[0])/x[1], scores))
+    return max(mapped)
 
 def find_best_route():
     pass
