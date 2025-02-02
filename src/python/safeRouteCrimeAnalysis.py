@@ -12,10 +12,18 @@ and returns a list of segments enriched with crime data.
 
 import os
 import iris
+import pandas as pd
 from shapely.geometry import LineString
 
 # Default buffer distance in degrees (approximately 15 meters)
 DefaultBufferDistance = 0.00014
+UserName = "demo"
+Password = "demo"
+HostName = os.getenv("IRIS_HOSTNAME", "localhost")
+Port = "1972"
+NameSpace = "USER"
+ConnectionString = f"{HostName}:{Port}/{NameSpace}"
+Conn = iris.connect(ConnectionString, UserName, Password)
 
 def GetDatabaseConnection(UserName: str, Password: str, HostName: str, Port: str, NameSpace: str):
     """
@@ -31,8 +39,8 @@ def GetDatabaseConnection(UserName: str, Password: str, HostName: str, Port: str
     Returns:
         iris.Connection: An open connection to the IRIS database.
     """
-    ConnectionString = f"{HostName}:{Port}/{NameSpace}"
-    Conn = iris.connect(ConnectionString, UserName, Password)
+    
+    
     return Conn
 
 def GetSegmentBbox(Segment, BufferDistance: float = DefaultBufferDistance) -> tuple:
@@ -68,7 +76,7 @@ def FetchCrimes(Cursor, TableName: str, Bbox: tuple) -> list:
     """
     MinLong, MinLat, MaxLong, MaxLat = Bbox
     Sql = f"""
-        SELECT Longitude, Latitude, CrimeType, Context, ContextVector 
+        SELECT Longitude, Latitude, CrimeType, ContextVector 
         FROM {TableName}
         WHERE Longitude BETWEEN ? AND ?
           AND Latitude BETWEEN ? AND ?
@@ -131,7 +139,8 @@ def AnalyzeSegments(
             "SegLength": SegLength,
             "Crimes": Crimes
         })
+
+    # Results = pd.DataFrame(Results)
     
-    Cursor.close()
-    Conn.close()
+
     return Results
