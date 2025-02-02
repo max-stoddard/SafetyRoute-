@@ -1,6 +1,6 @@
 import math
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
 
@@ -13,10 +13,10 @@ CORS(app)
 load_dotenv()
 
 
-@app.route('/api/calculate_route', methods=['GET'])
-def calculate_route():
+@app.route('/api/calculate_route/<startlat>/<startlong>/<endlat>/<endlong>', methods=['GET'])
+def calculate_route(startlat, startlong, endlat, endlong):
 
-    (routes, formattedRoutes) = find_routes((51.48180, -0.19098), (51.49172, -0.19391))
+    (routes, formattedRoutes) = find_routes((startlat, startlong), (endlat, endlong))
 
     for route in routes:
         print(route)
@@ -101,5 +101,5 @@ def find_best_route():
 
 
 if __name__ == '__main__':
-    calculate_route()
+    calculate_route(51.48180, -0.19098, 51.49172, -0.19391)
     # app.run(debug=True)
