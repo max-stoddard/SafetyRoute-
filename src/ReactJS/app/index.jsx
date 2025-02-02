@@ -9,18 +9,16 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   TouchableOpacity,
-  Image,
 } from "react-native";
 import * as Location from "expo-location";
 import MapView, { Marker, Polyline } from "react-native-maps";
-import { MaterialIcons } from "@expo/vector-icons";
-import { Ionicons } from "@expo/vector-icons"; // For profile icon
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
 
-//Temporary route
 // Define the route coordinates
+// const routeCoordinates = [];
 const routeCoordinates = [
   { latitude: 51.48209, longitude: -0.19003 },
   { latitude: 51.48167, longitude: -0.18956 },
@@ -83,41 +81,60 @@ const routeCoordinates = [
   { latitude: 51.48993, longitude: -0.19502 },
 ];
 
-
 export default function App() {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [initialRegion, setInitialRegion] = useState(null);
   const [text1, setText1] = useState('');
   const [text2, setText2] = useState('');
-  const mapRef = React.useRef(null); // Reference to MapView
+  const mapRef = React.useRef(null);
 
   useEffect(() => {
-    if (mapRef.current) {
+    const getLocation = async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        console.log("Permission to access location was denied");
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      setCurrentLocation(location.coords);
+
       if (routeCoordinates.length > 0) {
-        // Fit map to route
-        mapRef.current.fitToCoordinates(routeCoordinates, {
-          edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
-          animated: true,
+        setInitialRegion({
+          latitude: routeCoordinates[0].latitude,
+          longitude: routeCoordinates[0].longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
         });
-      } else if (currentLocation) {
-        // Center on current location
-        mapRef.current.animateToRegion({
-          latitude: currentLocation.latitude,
-          longitude: currentLocation.longitude,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
+      } else {
+        setInitialRegion({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
         });
       }
-    }
-  }, [routeCoordinates, currentLocation]);
+    };
 
-  const recenterMap = async () => {
+    getLocation();
+  }, []);
+
+  const recenterToRoute = () => {
+    if (mapRef.current && routeCoordinates.length > 0) {
+      mapRef.current.fitToCoordinates(routeCoordinates, {
+        edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+        animated: true,
+      });
+    }
+  };
+
+  const recenterToLiveLocation = () => {
     if (mapRef.current && currentLocation) {
       mapRef.current.animateToRegion({
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
-        latitudeDelta: 0.005,
-        longitudeDelta: 0.005,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
       });
     }
   };
@@ -127,35 +144,40 @@ export default function App() {
       <View style={styles.container}>
         {initialRegion && (
           <MapView ref={mapRef} style={styles.map} initialRegion={initialRegion}>
-            {/* Invisible marker to track the actual position */}
+            {/* Draw Route on Map */}
+            {routeCoordinates.length > 0 && (
+              <>
+                <Polyline coordinates={routeCoordinates} strokeWidth={5} strokeColor="blue" />
+                <Marker coordinate={routeCoordinates[0]} title="Start" />
+                <Marker coordinate={routeCoordinates[routeCoordinates.length - 1]} title="End" />
+              </>
+            )}
+
+            {/* User Location Marker */}
             {currentLocation && (
-              <Marker coordinate={currentLocation} anchor={{ x: 0.5, y: 0.5 }}>
+              <Marker coordinate={currentLocation}>
                 <View style={styles.locationDotContainer}>
                   <View style={styles.whiteOuterRing} />
                   <View style={styles.blueInnerDot} />
                 </View>
               </Marker>
-              
             )}
-            {/* Route points */}
-            <Marker coordinate={routeCoordinates[0]} />
-            <Polyline
-            coordinates={routeCoordinates}
-            strokeWidth={5}
-            strokeColor="blue"
-            />
-            <Marker coordinate={routeCoordinates[routeCoordinates.length - 1]} />
           </MapView>
         )}
 
-        {/* Profile Icon (Top Right) */}
+        {/* Profile Icon */}
         <TouchableOpacity style={styles.profileButton} onPress={() => console.log("Profile Pressed")}>
-          <Ionicons name="person-circle" size={60} color="white" />
+          <Ionicons name="person-circle" size={50} color="white" />
         </TouchableOpacity>
 
-        {/* Recenter Button */}
-        <TouchableOpacity style={styles.recenterButton} onPress={() => { recenterMap(); console.log("Recenter Pressed"); }}>
-          <MaterialIcons name="my-location" size={24} color="white" />
+        {/* Left Button - Recenter Route */}
+        <TouchableOpacity style={styles.recenterRouteButton} onPress={recenterToRoute}>
+          <MaterialIcons name="map" size={30} color="white" />
+        </TouchableOpacity>
+
+        {/* Right Button - Recenter Live Location */}
+        <TouchableOpacity style={styles.recenterLiveButton} onPress={recenterToLiveLocation}>
+          <MaterialIcons name="my-location" size={30} color="white" />
         </TouchableOpacity>
 
         {/* Keyboard Handling for Text Inputs */}
@@ -184,12 +206,33 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  map: { width: "100%", height: "100%" },
+  profileButton: {
+    position: "absolute",
+    top: 50,
+    right: 25,
+    backgroundColor: "#666666",
+    borderRadius: 30,
+    elevation: 8,
   },
-  map: {
-    width: "100%",
-    height: "100%",
+  recenterRouteButton: {
+    position: "absolute",
+    bottom: 180,
+    left: 20,
+    backgroundColor: "#007AFF",
+    padding: 12,
+    borderRadius: 30,
+    elevation: 8,
+  },
+  recenterLiveButton: {
+    position: "absolute",
+    bottom: 180,
+    right: 20,
+    backgroundColor: "#007AFF",
+    padding: 12,
+    borderRadius: 30,
+    elevation: 8,
   },
   avoidingView: {
     position: "absolute",
@@ -224,31 +267,6 @@ const styles = StyleSheet.create({
   bottomBox: {
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-  },
-  recenterButton: {
-    position: "absolute",
-    bottom: 180,
-    right: 20,
-    backgroundColor: "#007AFF",
-    padding: 12,
-    borderRadius: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
-  },
-  profileButton: {
-    position: "absolute",
-    top: 50,
-    right: 25,
-    backgroundColor: "#666666",
-    borderRadius: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
   },
   locationDotContainer: {
     alignItems: "center",
