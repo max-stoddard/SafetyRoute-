@@ -12,10 +12,21 @@ and returns a list of segments enriched with crime data.
 
 import os
 import iris
+import pandas as pd
 from shapely.geometry import LineString
+import time
 
 # Default buffer distance in degrees (approximately 15 meters)
 DefaultBufferDistance = 0.00014
+UserName = "demo"
+Password = "demo"
+HostName = os.getenv("IRIS_HOSTNAME", "localhost")
+Port = "1972"
+NameSpace = "USER"
+ConnectionString = f"{HostName}:{Port}/{NameSpace}"
+Conn = iris.connect(ConnectionString, UserName, Password)
+
+segmap = {}
 
 def GetDatabaseConnection(UserName: str, Password: str, HostName: str, Port: str, NameSpace: str):
     """
@@ -31,8 +42,8 @@ def GetDatabaseConnection(UserName: str, Password: str, HostName: str, Port: str
     Returns:
         iris.Connection: An open connection to the IRIS database.
     """
-    ConnectionString = f"{HostName}:{Port}/{NameSpace}"
-    Conn = iris.connect(ConnectionString, UserName, Password)
+    
+    
     return Conn
 
 def GetSegmentBbox(Segment, BufferDistance: float = DefaultBufferDistance) -> tuple:
@@ -68,7 +79,7 @@ def FetchCrimes(Cursor, TableName: str, Bbox: tuple) -> list:
     """
     MinLong, MinLat, MaxLong, MaxLat = Bbox
     Sql = f"""
-        SELECT Longitude, Latitude, CrimeType, Context, ContextVector 
+        SELECT Longitude, Latitude, CrimeType, ContextVector 
         FROM {TableName}
         WHERE Longitude BETWEEN ? AND ?
           AND Latitude BETWEEN ? AND ?
@@ -77,7 +88,7 @@ def FetchCrimes(Cursor, TableName: str, Bbox: tuple) -> list:
     return Cursor.fetchall()
 
 def AnalyzeSegments(
-    OriginalSegments: list,
+    OriginalSegments: list, # Only parse with this
     BufferDistance: float = DefaultBufferDistance,
     DbConfig: dict = None
 ) -> list:
@@ -122,17 +133,23 @@ def AnalyzeSegments(
 
     Results = []
     for Segment in OriginalSegments:
+        st = time.time()
         Bbox = GetSegmentBbox(Segment, BufferDistance)
         # Unpack segment length (for reporting purposes)
         _, SegLength = Segment
-        Crimes = FetchCrimes(Cursor, DbConfig["TableName"], Bbox)
+        Crimes = None
+        if Segment in segmap:
+            Crimes = segmap[Segment]
+        else:
+            Crimes = FetchCrimes(Cursor, DbConfig["TableName"], Bbox)
+            segmap[Segment] = Crimes
         Results.append({
             "Segment": Segment,
-            "Bbox": Bbox,
             "SegLength": SegLength,
             "Crimes": Crimes
         })
+
+    # Results = pd.DataFrame(Results)
     
-    Cursor.close()
-    Conn.close()
+
     return Results
