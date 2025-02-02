@@ -4,6 +4,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
 
+from xgboost import XGBRegressor
+import numpy as np
 import requests
 import polyline
 import os
@@ -98,8 +100,60 @@ def create_list_of_coordinate_pairs():
 def create_list_of_crimes():
     pass
 
-def create_list_of_scores():
-    pass
+def create_list_of_scores(results):
+    crime_scores = []
+
+    for segment in results:
+        length = segment["SegLength"]
+        crimes = segment["Crimes"]
+
+        crime_list = []
+
+        for crime in crimes:
+            score = calc_score(crime)
+            crime_list.append(score)
+
+        crime_scores.append(crime_list, length)
+
+    return crime_scores
+
+
+
+
+def calc_score(crime):
+    mapping = {
+        "Robbery": 0.8,
+        "Violence and sexual offences": 1.5,
+        "Other theft": 1.1,
+        "Shoplifting": 0.5,
+        "Theft from the person": 1.25,
+        "Bicycle theft": 0.7,
+        "Drugs": 1,
+        "Criminal damage and arson": 1.15,
+        "Vehicle crime": 0.8,
+        "Anti-social behavior": 1.3,
+        "Burglary": 0.7,
+        "Public order": 0.7,
+        "Other crime": 1,
+        "Posession of weapons": 1
+
+    }
+
+    context_vector = float(crime[4])
+
+    context_vector_reshape = np.array(context_vector, dtype=np.float32).reshape(1, -1)
+
+    model = XGBRegressor()
+    model.load_model("crime_score_regressor.JSON")
+
+    score = model.predict(context_vector_reshape)[0]
+
+    if crime[2] in mapping:
+        score = score * mapping[crime[2]]
+        if score > 1:
+            return 1
+    return score
+
 
 # scores = [pair(float[], float)]
 def create_one_score(scores):
