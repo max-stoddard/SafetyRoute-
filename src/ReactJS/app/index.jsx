@@ -9,10 +9,14 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   TouchableOpacity,
+  FlatList,
+  Text,
 } from "react-native";
 import * as Location from "expo-location";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+
+import { GOOGLE_API_KEY } from '@env';
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
@@ -81,13 +85,17 @@ const routeCoordinates = [
   { latitude: 51.48993, longitude: -0.19502 },
 ];
 
+
 export default function App() {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [initialRegion, setInitialRegion] = useState(null);
   const [text1, setText1] = useState('');
   const [text2, setText2] = useState('');
+  const [suggestions1, setSuggestions1] = useState([]);
+  const [suggestions2, setSuggestions2] = useState([]);
   const mapRef = React.useRef(null);
 
+  // Get the current location and set the initial region
   useEffect(() => {
     const getLocation = async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -119,6 +127,67 @@ export default function App() {
     getLocation();
   }, []);
 
+  // Fetch suggestions for the first text input (Current Location)
+  useEffect(() => {
+    if (text1.length >= 3) {
+      fetch(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
+          text1
+        )}&key=${GOOGLE_API_KEY}`
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.status === "OK") {
+            setSuggestions1(data.predictions);
+          } else {
+            setSuggestions1([]);
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+          setSuggestions1([]);
+        });
+    } else {
+      setSuggestions1([]);
+    }
+  }, [text1]);
+
+  // Fetch suggestions for the second text input (Destination)
+  useEffect(() => {
+    if (text2.length >= 3) {
+      fetch(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
+          text2
+        )}&key=${GOOGLE_API_KEY}`
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.status === "OK") {
+            setSuggestions2(data.predictions);
+          } else {
+            setSuggestions2([]);
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+          setSuggestions2([]);
+        });
+    } else {
+      setSuggestions2([]);
+    }
+  }, [text2]);
+
+  // When a suggestion is pressed, update the text and clear suggestions.
+  const handleSuggestionPress1 = (description) => {
+    setText1(description);
+    setSuggestions1([]);
+  };
+
+  const handleSuggestionPress2 = (description) => {
+    setText2(description);
+    setSuggestions2([]);
+  };
+
   const recenterToRoute = () => {
     if (mapRef.current && routeCoordinates.length > 0) {
       mapRef.current.fitToCoordinates(routeCoordinates, {
@@ -149,17 +218,40 @@ export default function App() {
     }
   };
 
+  // Render a suggestion item for the dropdown list
+  const renderSuggestionItem = ({ item }, onPressHandler) => (
+    <TouchableOpacity
+      style={styles.suggestionItem}
+      onPress={() => onPressHandler(item.description)}
+    >
+      <Text style={styles.suggestionText}>{item.description}</Text>
+    </TouchableOpacity>
+  );
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={styles.container}>
         {initialRegion && (
-          <MapView ref={mapRef} style={styles.map} initialRegion={initialRegion}>
+          <MapView
+            ref={mapRef}
+            style={styles.map}
+            initialRegion={initialRegion}
+          >
             {/* Draw Route on Map */}
             {routeCoordinates.length > 0 && (
               <>
-                <Polyline coordinates={routeCoordinates} strokeWidth={5} strokeColor="blue" />
+                <Polyline
+                  coordinates={routeCoordinates}
+                  strokeWidth={5}
+                  strokeColor="blue"
+                />
                 <Marker coordinate={routeCoordinates[0]} title="Start" />
-                <Marker coordinate={routeCoordinates[routeCoordinates.length - 1]} title="End" />
+                <Marker
+                  coordinate={
+                    routeCoordinates[routeCoordinates.length - 1]
+                  }
+                  title="End"
+                />
               </>
             )}
 
@@ -176,42 +268,79 @@ export default function App() {
         )}
 
         {/* Profile Icon */}
-        <TouchableOpacity style={styles.profileButton} onPress={() => console.log("Profile Pressed")}>
+        <TouchableOpacity
+          style={styles.profileButton}
+          onPress={() => console.log("Profile Pressed")}
+        >
           <Ionicons name="person-circle" size={50} color="white" />
         </TouchableOpacity>
 
         {/* Left Button - Recenter Route */}
-        <TouchableOpacity style={styles.recenterRouteButton} onPress={recenterToRoute}>
+        <TouchableOpacity
+          style={styles.recenterRouteButton}
+          onPress={recenterToRoute}
+        >
           <MaterialIcons name="map" size={30} color="white" />
         </TouchableOpacity>
 
         {/* Right Button - Recenter Live Location */}
-        <TouchableOpacity style={styles.recenterLiveButton} onPress={recenterToLiveLocation}>
+        <TouchableOpacity
+          style={styles.recenterLiveButton}
+          onPress={recenterToLiveLocation}
+        >
           <MaterialIcons name="my-location" size={30} color="white" />
         </TouchableOpacity>
 
         {/* Compass Button - Rotate to North */}
-        <TouchableOpacity style={styles.compassButton} onPress={resetMapToNorth}>
+        <TouchableOpacity
+          style={styles.compassButton}
+          onPress={resetMapToNorth}
+        >
           <MaterialIcons name="explore" size={30} color="white" />
         </TouchableOpacity>
 
-        {/* Keyboard Handling for Text Inputs */}
+        {/* Keyboard Handling and Text Inputs */}
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.avoidingView}
         >
           <View style={styles.textBoxContainer}>
-            <TextInput 
-              style={[styles.textBox, styles.topBox]} 
-              placeholder="Current Location" 
-              value={text1} 
-              onChangeText={setText1} 
+            {/* Dropdown for the first text input */}
+            {suggestions1.length > 0 && (
+              <View style={styles.dropdown}>
+                <FlatList
+                  data={suggestions1}
+                  keyExtractor={(item) => item.place_id}
+                  renderItem={(item) =>
+                    renderSuggestionItem(item, handleSuggestionPress1)
+                  }
+                />
+              </View>
+            )}
+            <TextInput
+              style={[styles.textBox, styles.topBox]}
+              placeholder="Current Location"
+              value={text1}
+              onChangeText={setText1}
             />
-            <TextInput 
-              style={[styles.textBox, styles.bottomBox]} 
-              placeholder="Destination..." 
-              value={text2} 
-              onChangeText={setText2} 
+
+            {/* Dropdown for the second text input */}
+            {suggestions2.length > 0 && (
+              <View style={styles.dropdown}>
+                <FlatList
+                  data={suggestions2}
+                  keyExtractor={(item) => item.place_id}
+                  renderItem={(item) =>
+                    renderSuggestionItem(item, handleSuggestionPress2)
+                  }
+                />
+              </View>
+            )}
+            <TextInput
+              style={[styles.textBox, styles.bottomBox]}
+              placeholder="Destination..."
+              value={text2}
+              onChangeText={setText2}
             />
           </View>
         </KeyboardAvoidingView>
@@ -274,6 +403,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 8,
+    padding: 10,
   },
   textBox: {
     width: "100%",
@@ -309,5 +439,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: "#007AFF",
   },
+  dropdown: {
+    backgroundColor: "white",
+    borderColor: "gray",
+    borderWidth: 1,
+    maxHeight: 150,
+  },
+  suggestionItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  suggestionText: {
+    fontSize: 14,
+  },
 });
-
