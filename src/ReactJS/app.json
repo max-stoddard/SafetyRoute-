@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "ReactJS",
+    "scheme": "ReactJS",
     "slug": "ReactJS",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,7 +14,10 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app needs access to your location to show your current position."
+      }
     },
     "android": {
       "adaptiveIcon": {
