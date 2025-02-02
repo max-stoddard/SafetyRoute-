@@ -33,6 +33,7 @@ export default function App() {
   const [suggestions2, setSuggestions2] = useState([]);
   const [start, setStart] = useState(null); // Coordinates for current location
   const [end, setEnd] = useState(null);     // Coordinates for destination
+  const [calculatedRoute, setCalculatedRoute] = useState([]);
   const mapRef = React.useRef(null);
 
   // Get current location and set the initial region
@@ -202,6 +203,20 @@ export default function App() {
     }
   };
 
+  // Hardcoded "calculated" polyline route
+  // (Replace this with your API call result later)
+  const handleGoPress = () => {
+    const hardcodedRoute = [
+      { latitude: start ? start.latitude : initialRegion.latitude, longitude: start ? start.longitude : initialRegion.longitude },
+      { latitude: (start ? start.latitude : initialRegion.latitude) + 0.005, longitude: (start ? start.longitude : initialRegion.longitude) + 0.005 },
+      { latitude: (end ? end.latitude : initialRegion.latitude) - 0.005, longitude: (end ? end.longitude : initialRegion.longitude) - 0.005 },
+      { latitude: end ? end.latitude : initialRegion.latitude, longitude: end ? end.longitude : initialRegion.longitude },
+    ];
+    setCalculatedRoute(hardcodedRoute);
+    // Center on the start of the calculated route:
+    recenterMap(hardcodedRoute[0]);
+  };
+
   // Render a suggestion item in the dropdown
   const renderSuggestionItem = ({ item }, onPressHandler) => (
     <TouchableOpacity
@@ -256,7 +271,7 @@ export default function App() {
           <MaterialIcons name="map" size={30} color="white" />
         </TouchableOpacity>
 
-        {/* Right Button - Recenter Live Location */}
+        {/* Left Button - Recenter Live Location */}
         <TouchableOpacity style={styles.recenterLiveButton} onPress={recenterToLiveLocation}>
           <MaterialIcons name="my-location" size={30} color="white" />
         </TouchableOpacity>
@@ -264,6 +279,11 @@ export default function App() {
         {/* Compass Button - Rotate to North */}
         <TouchableOpacity style={styles.compassButton} onPress={resetMapToNorth}>
           <MaterialIcons name="explore" size={30} color="white" />
+        </TouchableOpacity>
+
+        {/* Go Button - Calculates Route */}
+        <TouchableOpacity style={styles.goButton} onPress={handleGoPress}>
+          <MaterialIcons name="arrow-forward" size={36} color="white" />
         </TouchableOpacity>
 
         {/* Keyboard Handling and Text Inputs */}
@@ -335,7 +355,7 @@ const styles = StyleSheet.create({
   recenterLiveButton: {
     position: "absolute",
     bottom: 180,
-    right: 20,
+    left: 80,
     backgroundColor: "#007AFF",
     padding: 12,
     borderRadius: 30,
@@ -343,12 +363,24 @@ const styles = StyleSheet.create({
   },
   compassButton: {
     position: "absolute",
-    bottom: 250,
-    right: 20,
+    bottom: 240,
+    left: 20,
     backgroundColor: "#FF9500",
     padding: 12,
     borderRadius: 30,
     elevation: 8,
+  },
+  goButton: {
+    position: "absolute",
+    bottom: 180,
+    right: 20,
+    backgroundColor: "#007AFF",
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 10,
   },
   avoidingView: {
     position: "absolute",
@@ -366,7 +398,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 8,
-    padding: 10,
   },
   textBox: {
     width: "100%",
