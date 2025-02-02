@@ -261,3 +261,5 @@ iris-env/
 .vscode/
 
 node_modules/
+install/
+iris-env/
