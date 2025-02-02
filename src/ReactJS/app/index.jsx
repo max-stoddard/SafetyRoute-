@@ -15,14 +15,14 @@ import {
 import * as Location from "expo-location";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import axios from 'axios';
 
 import { GOOGLE_API_KEY } from '@env';
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
-const routeAPI = "http://localhost:5000/api/calculate_route"
-
-const routeCoordinates = [];
+// const routeAPI = "http://localhost:19000/api/calculate_route"
+const routeAPI = "https://red-fans-study.loca.lt/api/calculate_route"
 
 
 export default function App() {
@@ -49,10 +49,10 @@ export default function App() {
       }
       let location = await Location.getCurrentPositionAsync({});
       setCurrentLocation(location.coords);
-      if (routeCoordinates.length > 0) {
+      if (calculatedRoute.length > 0) {
         setInitialRegion({
-          latitude: routeCoordinates[0].latitude,
-          longitude: routeCoordinates[0].longitude,
+          latitude: calculatedRoute[0].latitude,
+          longitude: calculatedRoute[0].longitude,
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
         });
@@ -192,8 +192,8 @@ export default function App() {
   };
 
   const recenterToRoute = () => {
-    if (mapRef.current && routeCoordinates.length > 0) {
-      mapRef.current.fitToCoordinates(routeCoordinates, {
+    if (mapRef.current && calculatedRoute.length > 0) {
+      mapRef.current.fitToCoordinates(calculatedRoute, {
         edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
         animated: true,
       });
@@ -224,23 +224,40 @@ export default function App() {
   // Hardcoded "calculated" polyline route
   // (Replace this with your API call result later)
   const handleGoPress = async () => {
-
+  console.log('Imported axios:', axios);
     console.log(routeAPI + '/' + start.latitude + '/' + start.longitude + '/' + end.latitude + '/' + end.longitude)
     const url = routeAPI + '/' + start.latitude + '/' + start.longitude + '/' + end.latitude + '/' + end.longitude;
 
-    const getRoute = async() => {
-      try {
-        const response = await fetch(url);
-        const json = await response.json()
-        setRoutes(json)
-        console.log(json.safe_route)
-        setCalculatedRoute([{latitude: 50, longitude: -0.19}, {latitude: 50, longitude: -0.18}])
-      } catch (error) {
-        console.error(error)
-      }
-    }
+    try {
+    // Axios configuration with a 15-second timeout (15000 ms)
+    const response = await axios.get(url, {
+      timeout: 60000, // timeout after 15 seconds
+    });
 
-    await getRoute();
+    // Axios automatically parses the JSON response for you
+    const json = response.data;
+    setRoutes(json);
+    // console.log(json.safe_route);
+    const map = json.safe_route.map(([lat, long]) =>
+      {
+        return {latitude: lat, longitude: long}
+      });
+    console.log(map)
+    setCalculatedRoute(map);
+
+
+  } catch (error) {
+    // Axios errors can be due to a timeout, network issue, or HTTP error status
+    if (error.code === 'ECONNABORTED') {
+      console.error('Request timed out:', error);
+    } else if (error.response) {
+      // The request was made and the server responded with a status code
+      console.error('HTTP error!', error.response.status, error.response.data);
+    } else {
+      // Something else happened in setting up the request
+      console.error('Error during API call:', error.message);
+    }
+  }
   };
     //   try {
     //     const routeData = await getRouteData(url);
@@ -273,8 +290,7 @@ export default function App() {
 
     // Clear functions for text inputs.
     const clearText1 = () => setText1("");
-    const clearText2 = () => setText2("");  
-
+    const clearText2 = () => setText2("");
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={styles.container}>

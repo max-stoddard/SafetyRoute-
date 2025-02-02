@@ -26,14 +26,15 @@ load_dotenv()
 
 @app.route('/api/calculate_route/<startlat>/<startlong>/<endlat>/<endlong>', methods=['GET'])
 def calculate_route(startlat, startlong, endlat, endlong):
-    startTime = time.time()
+    # startTime = time.time()
     print(f"Calculating best path from Lat1: {startlat}, Long1: {startlong} to Lat1: {endlat}, Long1: {endlong}")
 
     (routes, formattedRoutes) = find_routes((startlat, startlong), (endlat, endlong))
-    print(f"{len(routes)} Routes found in {time.time() - startTime}")
-    tempTime = time.time()
+    print("got over here")
+    # print(f"{len(routes)} Routes found in {time.time() - startTime}")
+    # tempTime = time.time()
 
-    routeScores = []
+    # routeScores = []
         
     # i = 1
     # formattedRoutes = formattedRoutes[:4]
@@ -68,8 +69,10 @@ def calculate_route(startlat, startlong, endlat, endlong):
     # best = routes[minIndex]
     # print(best)
     #
+    print("got here")
     google_route_json = [list(coord) for coord in routes[0]]
     safe_route_json = [list(coord) for coord in routes[1]]
+    print("got here")
     #
     # print(f"Found in total: {time.time() - startTime}")
     #
