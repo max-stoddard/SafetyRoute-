@@ -39,7 +39,13 @@ def calculate_route(startlat, startlong, endlat, endlong):
     #
     # best = routes[minIndex]
     #
-    # return jsonify({'message': 'GET request successful'})
+    # google_route_json = [list(coord) for coord in routes[0]]
+    # safe_route_json = [list(coord) for coord in best]
+    #
+    # return jsonify({
+    #     "google_route": google_route_json,
+    #     "safe_route": safe_route_json
+    # })
 
 def find_routes(origin, destination):
     api_key = os.environ.get('API_KEY')
