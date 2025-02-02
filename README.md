@@ -32,8 +32,17 @@
 - Our “crime context” is fully vectorized to allow for crime severity to be quantified from context from 0 to 1, for any crime.
 - Our model is trained using data obtained from vector dot product searching
 - This allows us to further avoid routes where crimes are particularly dangerous
-- Our path safety ranking algorithm
+
+**Our path safety ranking algorithm**
 
 - We generated multiple routes from start to endpoint, divided into coordinate pair "segments", via Google Directions API
 - We then find crimes that have occurred, within the last 3 months, along each segment of the route
 - We then compute a severity score of each crime, using our trained model, to generate a total risk score for each route and choose the safest route
+
+**Routes for future development**
+
+- Worldwide Crime Data Coverage & pathfinding
+- Street Lighting Data integration: Prioritise lighter more visible routes
+- User-based Incident Reporting – Allow users to report unsafe areas
+or real-time incidents.
+
