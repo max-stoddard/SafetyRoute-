@@ -139,6 +139,16 @@ export default function App() {
     }
   };
 
+  const resetMapToNorth = () => {
+    if (mapRef.current) {
+      const camera = {
+        heading: 0, // Reset heading to 0 (North)
+        pitch: 0,
+      };
+      mapRef.current.animateCamera(camera, { duration: 500 });
+    }
+  };
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={styles.container}>
@@ -178,6 +188,11 @@ export default function App() {
         {/* Right Button - Recenter Live Location */}
         <TouchableOpacity style={styles.recenterLiveButton} onPress={recenterToLiveLocation}>
           <MaterialIcons name="my-location" size={30} color="white" />
+        </TouchableOpacity>
+
+        {/* Compass Button - Rotate to North */}
+        <TouchableOpacity style={styles.compassButton} onPress={resetMapToNorth}>
+          <MaterialIcons name="explore" size={30} color="white" />
         </TouchableOpacity>
 
         {/* Keyboard Handling for Text Inputs */}
@@ -230,6 +245,15 @@ const styles = StyleSheet.create({
     bottom: 180,
     right: 20,
     backgroundColor: "#007AFF",
+    padding: 12,
+    borderRadius: 30,
+    elevation: 8,
+  },
+  compassButton: {
+    position: "absolute",
+    bottom: 250,
+    right: 20,
+    backgroundColor: "#FF9500",
     padding: 12,
     borderRadius: 30,
     elevation: 8,
