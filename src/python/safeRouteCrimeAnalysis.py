@@ -14,6 +14,7 @@ import os
 import iris
 import pandas as pd
 from shapely.geometry import LineString
+import time
 
 # Default buffer distance in degrees (approximately 15 meters)
 DefaultBufferDistance = 0.00014
@@ -24,6 +25,8 @@ Port = "1972"
 NameSpace = "USER"
 ConnectionString = f"{HostName}:{Port}/{NameSpace}"
 Conn = iris.connect(ConnectionString, UserName, Password)
+
+segmap = {}
 
 def GetDatabaseConnection(UserName: str, Password: str, HostName: str, Port: str, NameSpace: str):
     """
@@ -130,10 +133,16 @@ def AnalyzeSegments(
 
     Results = []
     for Segment in OriginalSegments:
+        st = time.time()
         Bbox = GetSegmentBbox(Segment, BufferDistance)
         # Unpack segment length (for reporting purposes)
         _, SegLength = Segment
-        Crimes = FetchCrimes(Cursor, DbConfig["TableName"], Bbox)
+        Crimes = None
+        if Segment in segmap:
+            Crimes = segmap[Segment]
+        else:
+            Crimes = FetchCrimes(Cursor, DbConfig["TableName"], Bbox)
+            segmap[Segment] = Crimes
         Results.append({
             "Segment": Segment,
             "SegLength": SegLength,
