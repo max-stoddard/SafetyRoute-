@@ -34,7 +34,8 @@ export default function App() {
   const [suggestions2, setSuggestions2] = useState([]);
   const [start, setStart] = useState(null); // Coordinates for current location
   const [end, setEnd] = useState(null);     // Coordinates for destination
-  const [calculatedRoute, setCalculatedRoute] = useState([]);
+  const [calculatedGoogleRoute, setCalculatedGoogleRoute] = useState([]);
+  const [calculatedSafeRoute, setCalculatedSafeRoute] = useState([]);
   const [routes, setRoutes] = useState({ google_route: [], safe_route: [] });
   const [error, setError] = useState(null);
   const mapRef = React.useRef(null);
@@ -49,10 +50,10 @@ export default function App() {
       }
       let location = await Location.getCurrentPositionAsync({});
       setCurrentLocation(location.coords);
-      if (calculatedRoute.length > 0) {
+      if (calculatedSafeRoute.length > 0) {
         setInitialRegion({
-          latitude: calculatedRoute[0].latitude,
-          longitude: calculatedRoute[0].longitude,
+          latitude: calculatedSafeRoute[0].latitude,
+          longitude: calculatedSafeRoute[0].longitude,
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
         });
@@ -192,8 +193,8 @@ export default function App() {
   };
 
   const recenterToRoute = () => {
-    if (mapRef.current && calculatedRoute.length > 0) {
-      mapRef.current.fitToCoordinates(calculatedRoute, {
+    if (mapRef.current && calculatedSafeRoute.length > 0) {
+      mapRef.current.fitToCoordinates(calculatedSafeRoute, {
         edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
         animated: true,
       });
@@ -237,13 +238,17 @@ export default function App() {
     // Axios automatically parses the JSON response for you
     const json = response.data;
     setRoutes(json);
-    // console.log(json.safe_route);
-    const map = json.safe_route.map(([lat, long]) =>
+    const map1 = json.safe_route.map(([lat, long]) =>
       {
         return {latitude: lat, longitude: long}
       });
-    console.log(map)
-    setCalculatedRoute(map);
+    setCalculatedSafeRoute(map1);
+
+    const map2 = json.google_route.map(([lat, long]) =>
+      {
+        return {latitude: lat, longitude: long}
+      });
+    setCalculatedGoogleRoute(map2);
 
 
   } catch (error) {
@@ -297,11 +302,18 @@ export default function App() {
         {initialRegion && (
           <MapView ref={mapRef} style={styles.map} initialRegion={initialRegion}>
             {/* Draw Route on Map */}
-            {calculatedRoute.length > 0 && (
+            {calculatedSafeRoute.length > 0 && (
               <>
-                <Polyline coordinates={calculatedRoute} strokeWidth={5} strokeColor="blue" />
-                <Marker coordinate={calculatedRoute[0]} title="Start" />
-                <Marker coordinate={calculatedRoute[calculatedRoute.length - 1]} title="End" />
+                <Polyline coordinates={calculatedSafeRoute} strokeWidth={5} strokeColor="green" />
+                <Marker coordinate={calculatedSafeRoute[0]} title="Start" />
+                <Marker coordinate={calculatedSafeRoute[calculatedSafeRoute.length - 1]} title="End" />
+              </>
+            )}
+            {calculatedGoogleRoute.length > 0 && (
+              <>
+                <Polyline coordinates={calculatedGoogleRoute} strokeWidth={5} strokeColor="red" />
+              {/*  <Marker coordinate={calculatedGoogleRoute[0]} title="Start" />*/}
+              {/*  <Marker coordinate={calculatedGoogleRoute[calculatedGoogleRoute.length - 1]} title="End" />*/}
               </>
             )}
 
