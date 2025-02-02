@@ -227,6 +227,10 @@ export default function App() {
     </TouchableOpacity>
   );
 
+    // Clear functions for text inputs.
+    const clearText1 = () => setText1("");
+    const clearText2 = () => setText2("");  
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={styles.container}>
@@ -301,12 +305,22 @@ export default function App() {
                 />
               </View>
             )}
-            <TextInput
-              style={[styles.textBox, styles.topBox]}
-              placeholder="Current Location"
-              value={text1}
-              onChangeText={setText1}
-            />
+            <View style={styles.textInputWrapper}>
+              <TextInput
+                style={[styles.textBox, styles.topBox]}
+                placeholder="Current Location"
+                value={text1}
+                onChangeText={setText1}
+              />
+              {text1.length > 0 && (
+                <TouchableOpacity
+                  style={styles.clearButton}
+                  onPress={clearText1}
+                >
+                  <MaterialIcons name="clear" size={20} color="grey" />
+                </TouchableOpacity>
+              )}
+            </View>
             {/* Dropdown for the second text input */}
             {suggestions2.length > 0 && (
               <View style={styles.dropdown}>
@@ -319,12 +333,22 @@ export default function App() {
                 />
               </View>
             )}
-            <TextInput
-              style={[styles.textBox, styles.bottomBox]}
-              placeholder="Destination..."
-              value={text2}
-              onChangeText={setText2}
-            />
+            <View style={styles.textInputWrapper}>
+              <TextInput
+                style={[styles.textBox, styles.bottomBox]}
+                placeholder="Destination..."
+                value={text2}
+                onChangeText={setText2}
+              />
+              {text2.length > 0 && (
+                <TouchableOpacity
+                  style={styles.clearButton}
+                  onPress={clearText2}
+                >
+                  <MaterialIcons name="clear" size={20} color="grey" />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         </KeyboardAvoidingView>
       </View>
@@ -415,6 +439,12 @@ const styles = StyleSheet.create({
   bottomBox: {
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
+  },
+  clearButton: {
+    position: "absolute",
+    right: 10,
+    top: 15,
+    zIndex: 1,
   },
   locationDotContainer: {
     alignItems: "center",
