@@ -77,7 +77,7 @@ def FetchCrimes(Cursor, TableName: str, Bbox: tuple) -> list:
     return Cursor.fetchall()
 
 def AnalyzeSegments(
-    OriginalSegments: list,
+    OriginalSegments: list, # Only parse with this
     BufferDistance: float = DefaultBufferDistance,
     DbConfig: dict = None
 ) -> list:
@@ -128,7 +128,6 @@ def AnalyzeSegments(
         Crimes = FetchCrimes(Cursor, DbConfig["TableName"], Bbox)
         Results.append({
             "Segment": Segment,
-            "Bbox": Bbox,
             "SegLength": SegLength,
             "Crimes": Crimes
         })

@@ -3,6 +3,7 @@ import math
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
+from SafeRouteCrimeAnalysis import AnalyzeSegments
 
 import requests
 import polyline
@@ -21,31 +22,39 @@ def calculate_route(startlat, startlong, endlat, endlong):
     for route in routes:
         print(route)
 
-    # routeScores = []
-    #
-    # for route in formattedRoutes:
-    #     crimes = create_list_of_crimes(route)
-    #     scores = create_list_of_scores(crimes)
-    #     score = create_one_score(scores)
-    #     routeScores.append(score)
-    #
-    #
-    # minVal = 9999999999
-    # minIndex = 0
-    # for i in range(0, len(routeScores)):
-    #     if (routeScores[i] < minVal):
-    #         minVal = routeScores[i]
-    #         minIndex = i
-    #
-    # best = routes[minIndex]
-    #
-    # google_route_json = [list(coord) for coord in routes[0]]
-    # safe_route_json = [list(coord) for coord in best]
-    #
-    # return jsonify({
-    #     "google_route": google_route_json,
-    #     "safe_route": safe_route_json
-    # })
+    routeScores = []
+    
+    for route in formattedRoutes:
+        result = AnalyzeSegments(route)
+        # Use via
+        routeRet = result["Segment"]
+        if (route != routeRet):
+            print("Unexpected route not same")
+
+        length = result["SegLength"]
+        crimes = result["Crimes"]
+
+        scores = create_list_of_scores(crimes)
+        score = create_one_score(scores, length)
+        routeScores.append(score)
+    
+    
+    minVal = 9999999999
+    minIndex = 0
+    for i in range(0, len(routeScores)):
+        if (routeScores[i] < minVal):
+            minVal = routeScores[i]
+            minIndex = i
+    
+    best = routes[minIndex]
+    
+    google_route_json = [list(coord) for coord in routes[0]]
+    safe_route_json = [list(coord) for coord in best]
+    
+    return jsonify({
+        "google_route": google_route_json,
+        "safe_route": safe_route_json
+    })
 
 def find_routes(origin, destination):
     api_key = os.environ.get('API_KEY')
@@ -89,15 +98,6 @@ def find_routes(origin, destination):
 
     return route_coordinates, list(map(lambda lis: list(map(lambda pair: ((pair[0], pair[1]), math.sqrt(pow(pair[0][0] - pair[1][0], 2) + pow(pair[0][1] - pair[1][1], 2))), lis)), routes_as_coordinates))
 
-def create_coordinate_pairs():
-    pass
-
-def create_list_of_coordinate_pairs():
-    pass
-
-def create_list_of_crimes():
-    pass
-
 def create_list_of_scores():
     pass
 
@@ -109,7 +109,7 @@ def create_one_score(scores):
 def find_more_routes(routes):
     new_routes = []
     new_new_routes = []
-    api_key = os.environ.get('API_KEY')
+    api_key = os.environ.get('GOOGLE_API_KEY')
     if not api_key:
         raise Exception("API_KEY environment variable not set")
     url = "https://maps.googleapis.com/maps/api/directions/json"
