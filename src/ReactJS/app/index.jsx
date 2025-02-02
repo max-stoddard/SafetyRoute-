@@ -20,6 +20,7 @@ import { GOOGLE_API_KEY } from '@env';
 
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
+const routeAPI = "http://localhost:5000/api/calculate_route"
 
 const routeCoordinates = [];
 
@@ -34,6 +35,8 @@ export default function App() {
   const [start, setStart] = useState(null); // Coordinates for current location
   const [end, setEnd] = useState(null);     // Coordinates for destination
   const [calculatedRoute, setCalculatedRoute] = useState([]);
+  const [routes, setRoutes] = useState({ google_route: [], safe_route: [] });
+  const [error, setError] = useState(null);
   const mapRef = React.useRef(null);
 
   // Get current location and set the initial region
@@ -114,6 +117,21 @@ export default function App() {
       setSuggestions2([]);
     }
   }, [text2]);
+
+  async function getRouteData(url) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Network response was not ok: ' + response.statusText);
+      }
+      const data = await response.json();
+      console.log('Route data:', data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching route:', error);
+      throw error;
+    }
+  }
 
    // Helper to recenter the map on a given coordinate
    const recenterMap = (coordinate) => {
@@ -205,17 +223,43 @@ export default function App() {
 
   // Hardcoded "calculated" polyline route
   // (Replace this with your API call result later)
-  const handleGoPress = () => {
-    const hardcodedRoute = [
-      { latitude: start ? start.latitude : initialRegion.latitude, longitude: start ? start.longitude : initialRegion.longitude },
-      { latitude: (start ? start.latitude : initialRegion.latitude) + 0.005, longitude: (start ? start.longitude : initialRegion.longitude) + 0.005 },
-      { latitude: (end ? end.latitude : initialRegion.latitude) - 0.005, longitude: (end ? end.longitude : initialRegion.longitude) - 0.005 },
-      { latitude: end ? end.latitude : initialRegion.latitude, longitude: end ? end.longitude : initialRegion.longitude },
-    ];
-    setCalculatedRoute(hardcodedRoute);
-    // Center on the start of the calculated route:
-    recenterMap(hardcodedRoute[0]);
+  const handleGoPress = async () => {
+
+    console.log(routeAPI + '/' + start.latitude + '/' + start.longitude + '/' + end.latitude + '/' + end.longitude)
+    const url = routeAPI + '/' + start.latitude + '/' + start.longitude + '/' + end.latitude + '/' + end.longitude;
+
+    const getRoute = async() => {
+      try {
+        const response = await fetch(url);
+        const json = await response.json()
+        setRoutes(json)
+        console.log(json.safe_route)
+        setCalculatedRoute([{latitude: 50, longitude: -0.19}, {latitude: 50, longitude: -0.18}])
+      } catch (error) {
+        console.error(error)
+      }
+    }
+
+    await getRoute();
   };
+    //   try {
+    //     const routeData = await getRouteData(url);
+    //     if (!routeData.ok) {
+    //       throw new Error('Network response was not ok ' + routeData.statusText);
+    //     }
+    //     setRoutes(routeData);
+    //     setCalculatedRoute(routes.safe_route);
+    //     recenterMap(calculatedRoute[0]);
+    //   } catch (error) {
+    //     setError(error.message);
+    //     console.error('Error fetching the routes:', error);
+    //   }
+    // };
+
+
+
+    // Center on the start of the calculated route:
+
 
   // Render a suggestion item in the dropdown
   const renderSuggestionItem = ({ item }, onPressHandler) => (
@@ -237,11 +281,11 @@ export default function App() {
         {initialRegion && (
           <MapView ref={mapRef} style={styles.map} initialRegion={initialRegion}>
             {/* Draw Route on Map */}
-            {routeCoordinates.length > 0 && (
+            {calculatedRoute.length > 0 && (
               <>
-                <Polyline coordinates={routeCoordinates} strokeWidth={5} strokeColor="blue" />
-                <Marker coordinate={routeCoordinates[0]} title="Start" />
-                <Marker coordinate={routeCoordinates[routeCoordinates.length - 1]} title="End" />
+                <Polyline coordinates={calculatedRoute} strokeWidth={5} strokeColor="blue" />
+                <Marker coordinate={calculatedRoute[0]} title="Start" />
+                <Marker coordinate={calculatedRoute[calculatedRoute.length - 1]} title="End" />
               </>
             )}
 
