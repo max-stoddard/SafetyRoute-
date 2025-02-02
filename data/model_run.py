@@ -5,12 +5,15 @@ from vectorAnalyze import ContextRegressor
 from sentence_transformers import SentenceTransformer
 
 
+
+
 X_train = np.array([[0.2, 0.5, 0.3, 0.1],
                     [0.1, 0.2, 0.1, 0.3],
                     [0.4, 0.4, 0.2, 0.5]])
 
 
 y_train = np.array([15, 10, 20])
+
 vectorizer = SentenceTransformer('all-MiniLM-L6-v2')
 searchPhraseHigh = "violent aggresor and sexual assault mugged on street, arson, harassment"
 searchPhraseMid = "pickpocket, anti social loitering, loud disturbance"
@@ -26,7 +29,14 @@ sql = f"""
     """
 
 
+
+
 numberOfResults = 100
+
+cursor.execute(sql, [numberOfResults, str(searchVectorHigh)])
+
+results = cursor.fetchall()
+print(results)
 
 
 
