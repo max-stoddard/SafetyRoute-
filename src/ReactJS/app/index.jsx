@@ -22,7 +22,7 @@ import { GOOGLE_API_KEY } from '@env';
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
 // const routeAPI = "http://localhost:19000/api/calculate_route"
-const routeAPI = "https://red-fans-study.loca.lt/api/calculate_route"
+const routeAPI = "https://six-signs-know.loca.lt/api/calculate_route"
 
 
 export default function App() {
